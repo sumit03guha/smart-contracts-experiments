@@ -9,7 +9,6 @@ typechain-types
 cache
 artifacts
 package-lock.json
-gas-report.txt
 
 #yarn files
 .pnp.*

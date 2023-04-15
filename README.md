@@ -1,32 +1,29 @@
-# Basic Hardhat Project Boilerplate
+# Gas usage in solidity
 
-> This hardhat boilerplate also includes foundry fuzz-testing feature.
+## Motivation
+
+- This project aims to compare the gas usage of the smart contracts and their functions written in solidity. We try to do a deep dive into the bytecode of the smart contracts and try to understand the gas usage comparison between the different functions.
 
 ## Prerequisites
 
-- Install [foundry](https://book.getfoundry.sh/) for fuzzing the smart contracts. Go through the [installation instructions](https://book.getfoundry.sh/getting-started/installation) to install foundry.
-- Configure the foundry.toml as per your requirements. Refer to the [foundry config reference](https://book.getfoundry.sh/reference/config/) for more details.
-- Install truffle : `npm i -g truffle`
-- The latest version of truffle has issues with installation on Windows.
-- To resolve the errors, go to [this page](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&channel=Release&version=VS2022&source=VSLandingPage&cid=2030&passive=false), download Microsoft Visual Studio 2022 and then install the Visual Studio Installer.
-- Select Desktop Development with C++ and uncheck all the optional installation options.
-- Once it is done, the truffle can be installed with `npm i -g truffle`
+- Install [foundry](https://book.getfoundry.sh/). Go through the [installation instructions](https://book.getfoundry.sh/getting-started/installation) to install foundry.
+- Configure the [foundry.toml](./foundry.toml) as per your requirements. Refer to the [foundry config reference](https://book.getfoundry.sh/reference/config/) for more details.
 
-## Instructions and hardhat commands
+- Install the project dependencies.
 
-- Install the boilerplate project dependencies. \
-  Do a check for the latest npm package versions. \
-  This will update the versions inside the package.json.
+  - Do a check for the latest npm package versions. This will update the versions inside the package.json.
 
-  ```shell
-  npx npm-check-updates -u
-  ```
+    ```shell
+    npx npm-check-updates -u
+    ```
 
-  ```shell
-  yarn
-  ```
+  - Use [yarn](https://yarnpkg.com/) (preferred version 3+) to install the dependencies.
 
-  This will install the packages mentioned inside the `package.json` file.
+    ```shell
+    yarn
+    ```
+
+    This will install the packages mentioned inside the `package.json` file.
 
 - Compile the smart contracts.
 
@@ -34,110 +31,104 @@
   yarn clean-compile
   ```
 
-- Check for linting and formatting errors in the code. This will display all the code errors and warnings in the terminal.
+## Diving into the smart contract and its bytecode
 
-  ```shell
-  yarn check
+- The smart contract `Counter`, present inside the [contracts](./contracts) directory, is what we are going to study.
+
+  ![Counter](./assets/contract.png)
+
+- The smart contract has been compiled to generate bytecode through intermediate repersentation (IR) in Yul. Read more about the IR in the [official solidity documentation](https://docs.soliditylang.org/en/latest/ir-breaking-changes.html).\
+   To do so, we have set the `viaIR` flag to `true` in the [hardhat.config.js](./hardhat.config.js) file
+
+  ```ts
+  solidity: {
+    compilers: [
+      {
+        version: '0.8.19',
+        settings: {
+          viaIR: true,
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+    ],
+  },
   ```
 
-- Generate the typechain types for the smart contracts. This will create a `typechain-types` folder comprising all the typechain types, in the root directory of the project.
+  and the `via_ir` flag to `true` in the [foundry.toml](./foundry.toml) file.
 
-  ```shell
-  yarn typechain
+  ```toml
+  via_ir = true
   ```
 
-- Compute the size of the smart contracts. This will display the size of the smart contracts in the terminal.
+  The [Yul code](./outputs/yul/Counter.yul) has been generated using the following command using solc. The `ir` flag generates the Intermediate Representation (IR) of the smart contract.
 
   ```shell
-  yarn size
+  solc contracts/Counter.sol -o outputs/yul/ --ir
   ```
 
-- Run the test scripts. This uses the hardhat network configured in the `hardhat.config.ts` file to run the tests.
+- ### Bytecode Observations
 
-  ```shell
-  yarn test
-  ```
+  Upon closely looking into the [Yul code](./outputs/yul/Counter.yul) generated we can see the following bytecode comparisons.
 
-- To run the tests on your localhost node for debugging purposes, you can run the following commands.\
-  Instantiate the hardhat local node.
+- ### Comparison between Public and External functions
 
-  ```shell
-  yarn localnode
-  ```
+  - #### Public function (`setPublic`)
 
-- Split the terminal running the hardhat node, or, open another terminal and run the project test scripts using the local node.
+  ![Public function](./assets/setPublic.png)
 
-  ```shell
-  yarn test:local
-  ```
+  - #### External function (`setExternal`)
 
-- Generate the code coverage report. \
-  After generating the report, you can open the `coverage/index.html` file to see the results.
+  ![External function](./assets/setExternal.png)
 
-  ```shell
-  yarn coverage
-  ```
+- **Looking closely into the Yul code, we can see that both the bytecode generated for the public and external functions are the same.**
 
-- Generate the documentation for the smart contracts. This will create a `docs` folder comprising all the documentation related to the smart contracts, in the root directory of the project.
+- ### Comparison between pre-increment and post-increment
 
-  ```shell
-  yarn doc
-  ```
+  - #### Pre-increment (`loop2`)
 
-- Instantiate the truffle dashboard. \
-  This lets you deploy the contracts without the need of pasting the private key anywhere in the project.
+  ![Pre-increment](./assets/loop2.png)
 
-  ```shell
-  truffle dashboard
-  ```
+  - #### Post-increment (`loop1`)
 
-- The browser will open up and then you have to connect with the MetaMask extension. Select the preferred network and the account to deploy the smart contract.
+  ![Post-increment](./assets/loop1.png)
 
-- Deploy the hardhat project smart contracts using your preferred network or the truffle dashboard, by specifying the `NETWORK`. If you are using any network other than `truffle` or `localhost`, then the private key of the account from which the smart contract is to be deployed, should be specified in the `.env` file.
+- **Looking closely into the Yul code, we can see that both the bytecode generated for the pre-increment and post-increment are very much the same.** \
+  In line 30 of the Yul code of both the code snippets, we can see that the the function `increment_t_uint256()` is called.
+  The function `increment_t_uint256(value)` is defined in the Yul code as follows.
 
-  ```shell
-  yarn deploy {NETWORK}
-  ```
+  ![Increment](./assets/increment.png)
 
-- If `truffle` has been specified as the `NETWORK`, then switch to the browser and sign the deployment transaction from the MetaMask extension.
+  Both the incrementers are using `ret := add(value, 1)`, as shown in line 5 of the above code snippet, to increment the value of the variable by 1.
 
-- After the succesful deployment of the smart contracts, a `build/deploy.json` file will be generated comprising the deployed addresse and the ABI of the smart contracts.
+- ### Gas usage Observations
 
-- Verify the smart contract using the `NETWORK` on which it was deployed and the smart contract address, alongwith the constructor arguments by modifiying the `verify.ts` file, and entering the network name in the CLI after running the following command.
+  Now let's look at the gas usage of the smart contract functions.
 
-  ```shell
-  yarn verify {NETWORK}
-  ```
+  - #### Hardhat gas report
 
-## A typical top-level directory layout
+    ![Gas report hardhat](./assets/gas-report-hardhat.png)
 
-```shell
-.
-├── build                 # deployed addresses and the ABI of the smart contract (scripts/deploy.ts)
-  └── artifacts           # hardhat deployment information [hardhat default]
-  └── cache               # hardhat deployment information [hardhat default]
-  └── deployments         # address and ABI of the smart contract [modified after hardhat default]
-├── contracts             # smart contracts solidity files
-├── coverage              # coverage report (index.html) [gitignored]
-├── docs                  # smart contracts documentation
-├── node_modules          # npm/yarn dependency files [gitignored]
-├── scripts               # deployment scripts (deploy.ts) and other tasks [modified after hardhat default]
-├── test                  # test scripts [modified after hardhat default]
-├── typechain-types       # typechain types, generated after compilation [gitignored]
-├── .env                  # API keys of block explorers for smart contract verification [should be gitignored]
-├── .env.example          # format for structuring the .env file
-├── .solhint.json         # solhint configuration
-├── .solhintignore        # solhint ignore configuration
-├── .yarnrc.yml           # https://yarnpkg.com/getting-started/migration#if-required-enable-the-node-modules-plugin
-├── coverage.json         # gitignored
-├── hardhat-config.ts     # hardhat configuration [modified after hardhat default]
-├── package.json          # project details and dependencies
-├── README.md             # project details and instructions
-├── tsconfig.json         # typescript configuration [hardhat default]
-├── yarn.lock             # yarn dependencies
-└── .gitignore
-```
+  - #### Foundry gas report
 
-## Notes
+    ![Gas report foundry](./assets/gas-report-foundry.png)
 
-- All the files and folders that have been [modified after hardhat default], as mentioned in the above directory layout, consists of well-commented codes in the respective places, regarding the modifications.
+- ### Gas usage comparisons
+
+  - > `setPublic` < `setExternal`
+
+    - The gas usage of the public function is less than the external function as seen in both the gas reports from hardhat and foundry.
+
+  - > `loop2` < `loop1`
+
+    - The gas usage of the pre-increment is less than the post-increment as seen in both the gas reports from hardhat and foundry.
+
+## Conclusion
+
+- Even though the bytecode (Yul code) of the public and external functions are the same, the gas usage of the public function is less than the external function. Conventionally, what we have known is that the external function consumes less gas as compared to the public function, since only the external function could take `calldata` arguments and the public functions were forced to take the more expensive `memory` arguments. But, in this case, we can see that the gas usage of the public function is less than the external function.
+
+- Even though the bytecode (Yul code) of the pre-increment and post-increment are the same, the gas usage of the pre-increment is less than the post-increment.
+
+- The above conclusions are neither perfect nor do they fully explain the reason behind the observations. But, they do raise some questions as to why the gas usage of the public function is less than the external function and the gas usage of the pre-increment is less than the post-increment, even though the bytecode (Yul code) of both the functions are the same.

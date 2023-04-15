@@ -106,7 +106,7 @@ const config: HardhatUserConfig = {
     coinmarketcap: COINMARKETCAP_API_KEY,
     gasPrice: 21,
     showTimeSpent: true,
-    outputFile: 'gas-report.txt',
+    outputFile: 'outputs/gas-reports/gas-report-hardhat.txt',
     noColors: true,
   },
   paths: {
@@ -127,6 +127,7 @@ const config: HardhatUserConfig = {
     strict: true,
     only: [],
     except: [],
+    outputFile: 'outputs/contract-sizes.txt',
   },
   /**
    * @description This works along with the @package hardhat-dodoc to generate the documentation of the smart contracts.

@@ -1,7 +1,7 @@
 {
-  "name": "hardhat-boilerplate",
-  "version": "0.6.5",
-  "description": "A boilerplate repository for hardhat project",
+  "name": "smart-contracts-experiments",
+  "version": "0.0.1",
+  "description": "Repository to experiment with smart contracts and the language of solidity",
   "author": {
     "name": "Sumit Guha",
     "email": "sumit03guha@gmail.com"
@@ -26,9 +26,9 @@
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.8",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
-    "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
-    "@nomiclabs/hardhat-solhint": "^3.0.0",
+    "@nomiclabs/hardhat-solhint": "^3.0.1",
     "@primitivefi/hardhat-dodoc": "^0.2.3",
     "@typechain/ethers-v5": "^10.2.0",
     "@typechain/hardhat": "^6.1.5",
@@ -38,7 +38,7 @@
     "chai": "^4.3.7",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
-    "hardhat": "^2.13.0",
+    "hardhat": "^2.13.1",
     "hardhat-contract-sizer": "^2.8.0",
     "hardhat-gas-reporter": "^1.0.9",
     "prettier": "^2.8.7",
@@ -47,7 +47,7 @@
     "solidity-coverage": "^0.8.2",
     "ts-node": "^10.9.1",
     "typechain": "^8.1.1",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "repository": {
     "type": "git",
@@ -55,9 +55,11 @@
   },
   "keywords": [
     "hardhat",
+    "foundry",
     "smart-contracts",
+    "fuzzing",
     "ethers",
-    "boilerplate",
+    "experiments",
     "ethereum",
     "truffle",
     "solidity",

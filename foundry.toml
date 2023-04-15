@@ -88,7 +88,7 @@ names = false
 # Print the sizes of the compiled contracts
 sizes = false
 # Whether or not to use the Yul intermediate representation compilation pipeline
-via_ir = false
+via_ir = true
 # Enables or disables RPC caching when forking
 no_storage_caching = false
 # Use the given hash method for the metadata hash that is appended
