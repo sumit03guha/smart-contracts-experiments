@@ -11,7 +11,6 @@
     "no-empty-blocks": "warn",
     "no-unused-vars": "warn",
     "payable-fallback": "warn",
-    "func-order": "warn",
     "quotes": ["error", "double"],
     "const-name-snakecase": "warn",
     "event-name-camelcase": "warn",

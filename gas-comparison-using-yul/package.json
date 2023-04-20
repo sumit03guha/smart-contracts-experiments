@@ -1,7 +1,7 @@
 {
   "name": "smart-contracts-experiments",
   "version": "0.0.1",
-  "description": "Repository to experiment with smart contracts and the language of solidity",
+  "description": "Repository to compare the gas usage of different smart contract patterns using Yul",
   "author": {
     "name": "Sumit Guha",
     "email": "sumit03guha@gmail.com"
