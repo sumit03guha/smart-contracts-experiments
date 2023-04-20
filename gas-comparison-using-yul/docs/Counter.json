@@ -1,0 +1,50 @@
+{
+  "methods": {
+    "loop1()": {
+      "stateMutability": "nonpayable",
+      "code": "function loop1() external nonpayable",
+      "inputs": {},
+      "outputs": {}
+    },
+    "loop2()": {
+      "stateMutability": "nonpayable",
+      "code": "function loop2() external nonpayable",
+      "inputs": {},
+      "outputs": {}
+    },
+    "number()": {
+      "stateMutability": "view",
+      "code": "function number() external view returns (uint256)",
+      "inputs": {},
+      "outputs": {
+        "_0": {
+          "type": "uint256"
+        }
+      }
+    },
+    "setExternal(uint256)": {
+      "stateMutability": "nonpayable",
+      "code": "function setExternal(uint256 _number) external nonpayable",
+      "inputs": {
+        "_number": {
+          "type": "uint256"
+        }
+      },
+      "outputs": {}
+    },
+    "setPublic(uint256)": {
+      "stateMutability": "nonpayable",
+      "code": "function setPublic(uint256 _number) external nonpayable",
+      "inputs": {
+        "_number": {
+          "type": "uint256"
+        }
+      },
+      "outputs": {}
+    }
+  },
+  "events": {},
+  "errors": {},
+  "path": "",
+  "name": "Counter"
+}
