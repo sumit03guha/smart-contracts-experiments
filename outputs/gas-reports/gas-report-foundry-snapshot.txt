@@ -1,4 +1,0 @@
-CounterTest:testLoop1() (gas: 31813)
-CounterTest:testLoop2() (gas: 31826)
-CounterTest:testSetExternal(uint256) (runs: 256, μ: 27321, ~: 28488)
-CounterTest:testSetPublic(uint256) (runs: 256, μ: 27426, ~: 28593)
