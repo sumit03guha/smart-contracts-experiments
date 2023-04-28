@@ -5,14 +5,15 @@
 - This repository presents an engaging case study that highlights how Hardhat network forking led to a false positive test case in a smart contract deployment. Through the following code snippets, we'll explore a situation where a smart contract, **despite not being sent any ether during deployment, ends up holding ether**.
 - **Disclaimer**: As this project is under active development, the complete codebase has not been made available. However, the code snippets provided below should offer enough insight to understand the issue at hand.
 
-```graph LR
-subgraph Y[Localhost : Hardhat Network Fork]
-  A[Test case - \nContract deployment with 0 ether sent to the deployed contract] -->|Deployment| B[Deployed Address :\nAddress A\n Balance : 0.01 ether]
-end
-subgraph X[Goerli Test Network]
-  D[State :\n Address A\n Balance : 0.01 Ether]
-end
-X --> |Fork| Y
+```mermaid
+graph LR
+    subgraph Y[Localhost : Hardhat Network Fork]
+    A[Test case - \nContract deployment with 0 ether sent to the deployed contract] -->|Deployment| B[Deployed Address :\nAddress A\n Balance : 0.01 ether]
+    end
+    subgraph X[Goerli Test Network]
+    D[State :\n Address A\n Balance : 0.01 Ether]
+    end
+    X --> |Fork| Y
 ```
 
 
