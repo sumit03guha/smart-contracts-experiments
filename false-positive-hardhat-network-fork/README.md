@@ -11,11 +11,10 @@ graph LR
     A[Test case - \nContract deployment with 0 ether sent to the deployed contract] -->|Deployment| B[Deployed Address :\nAddress A\n Balance : 0.01 ether]
     end
     subgraph X[Goerli Test Network]
-    D[State :\n Address A\n Balance : 0.01 Ether]
+    D[State :\n Address A(Same as that of Goerli Testnet)\n Balance : 0.01 Ether]
     end
     X --> |Fork| Y
 ```
-
 
 ## A Quick Look at Hardhat Network Forking
 
@@ -48,5 +47,5 @@ graph LR
 
 - The `customStrategy` smart contract was deployed with `0 ether`. However, its balance is actually `0.01 ether`. This unexpected outcome occured because **the address to which the smart contract had been deployed already held ether, specifically on the Goerli testnet**, which was forked by our Hardhat project.
 - By looking up the address [0xe6AFcC58b60dA41C5B2789E0f3F7B53a6ea98F74](https://goerli.etherscan.io/address/0xe6AFcC58b60dA41C5B2789E0f3F7B53a6ea98F74) on the [Goerli testnet block explorer](https://goerli.etherscan.io/), you can see that it's a _regular account address_ holding `0.01 ether`.
-- **When Hardhat forks a network, it copies the state of the network at a particular block number**. 
+- **When Hardhat forks a network, it copies the state of the network at a particular block number**.
 - This case study serves as a reminder for developers to be cautious when working with forked networks and to ensure that their test cases account for such nuances.
