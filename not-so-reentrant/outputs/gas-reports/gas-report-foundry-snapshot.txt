@@ -1,0 +1,2 @@
+NonReentrancyTest:testFailAttack() (gas: 87527)
+ReentrancyTest:testAttack() (gas: 97385)
