@@ -1,27 +1,25 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.7.6;
 
-// import "hardhat/console.sol";
-
-contract Victim {
+contract UnsafeVictim {
 	mapping(address => uint256) public balanceOf;
 
 	function deposit() external payable {
 		balanceOf[msg.sender] += msg.value;
 	}
 
+	/**
+	 * @dev This function is vulnerable to reentrancy attack.
+	 * @dev The attacker can call this function and then call withdraw() to withdraw the same amount again.
+	 * @dev The check-effect-interaction pattern has not been followed to prevent reentrancy attack.
+	 * @param value The amount to withdraw.
+	 */
 	function withdraw(uint256 value) external {
-		// console.log("withdrawing");
-
 		require(value <= balanceOf[msg.sender], "Insufficient balance");
 
 		(bool success, ) = msg.sender.call{ value: value }("");
 		require(success, "Transfer failed");
 
-		// console.log("balance", balanceOf[msg.sender]);
-
 		balanceOf[msg.sender] -= value;
-
-		// console.log("balance after", balanceOf[msg.sender]);
 	}
 }
