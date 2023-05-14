@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+pragma solidity 0.8.19;
 
-contract UnsafeVictim {
+contract SafeVictim {
 	mapping(address => uint256) public balanceOf;
+
+	event VictimAttacked();
 
 	function deposit() external payable {
 		balanceOf[msg.sender] += msg.value;
@@ -11,7 +13,7 @@ contract UnsafeVictim {
 	/**
 	 * @dev This function is vulnerable to reentrancy attack.
 	 * @dev The attacker can call this function and then call withdraw() to withdraw the same amount again.
-	 * @dev The check-effect-interaction pattern has not been followed to prevent reentrancy attack.
+	 * @dev The check-effect-interaction pattern has not been followed to prevent the exploit by reentrancy attack.
 	 * @param value The amount to withdraw.
 	 */
 	function withdraw(uint256 value) external {
@@ -21,5 +23,7 @@ contract UnsafeVictim {
 		require(success, "Transfer failed");
 
 		balanceOf[msg.sender] -= value;
+
+		emit VictimAttacked();
 	}
 }

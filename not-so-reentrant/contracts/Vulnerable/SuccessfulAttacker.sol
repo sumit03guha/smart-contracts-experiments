@@ -7,7 +7,7 @@ interface IVictim {
 	function withdraw(uint256 value) external;
 }
 
-contract ReentrantAttacker {
+contract SuccessfulAttacker {
 	address public victim;
 	address public owner;
 
