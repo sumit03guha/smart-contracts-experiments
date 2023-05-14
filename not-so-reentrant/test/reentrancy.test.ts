@@ -4,31 +4,31 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import {
   SafeVictim,
   UnsafeVictim,
-  ReentrantAttacker,
-  NonReentrantAttacker,
-  ReentrantAttacker__factory,
-  NonReentrantAttacker__factory,
+  SuccessfulAttacker,
+  FailedAttacker,
+  SuccessfulAttacker__factory,
+  FailedAttacker__factory,
   UnsafeVictim__factory,
   SafeVictim__factory,
 } from '../typechain-types';
 
-describe('Reentrancy test', async () => {
+describe('Vulnerability test', async () => {
   let unsafeVictim: UnsafeVictim,
     safeVictim: SafeVictim,
-    nonReentrantAttacker: NonReentrantAttacker,
-    reentrantAttacker: ReentrantAttacker;
+    failedAttacker: FailedAttacker,
+    successfulAttacker: SuccessfulAttacker;
 
   let accounts: SignerWithAddress[],
-    user1: SignerWithAddress,
-    user2: SignerWithAddress,
-    user3: SignerWithAddress,
+    alice: SignerWithAddress,
+    bob: SignerWithAddress,
+    charlie: SignerWithAddress,
     attacker: SignerWithAddress;
 
   beforeEach(async () => {
     accounts = await ethers.getSigners();
-    user1 = accounts[0];
-    user2 = accounts[1];
-    user3 = accounts[2];
+    alice = accounts[0];
+    bob = accounts[1];
+    charlie = accounts[2];
     attacker = accounts[3];
 
     const UnsafeVictim: UnsafeVictim__factory = await ethers.getContractFactory(
@@ -43,54 +43,56 @@ describe('Reentrancy test', async () => {
     safeVictim = await SafeVictim.deploy();
     await safeVictim.deployed();
 
+    // Deposit 1 ETH into the smart contracts for each user
+
     await unsafeVictim
-      .connect(user1)
+      .connect(alice)
       .deposit({ value: ethers.utils.parseEther('1') });
     await unsafeVictim
-      .connect(user2)
+      .connect(bob)
       .deposit({ value: ethers.utils.parseEther('1') });
     await unsafeVictim
-      .connect(user3)
+      .connect(charlie)
       .deposit({ value: ethers.utils.parseEther('1') });
 
     await safeVictim
-      .connect(user1)
+      .connect(alice)
       .deposit({ value: ethers.utils.parseEther('1') });
     await safeVictim
-      .connect(user2)
+      .connect(bob)
       .deposit({ value: ethers.utils.parseEther('1') });
     await safeVictim
-      .connect(user3)
+      .connect(charlie)
       .deposit({ value: ethers.utils.parseEther('1') });
   });
 
   it('should let the attacker steal the funds from the unsafe contract', async () => {
-    const ReentrantAttacker: ReentrantAttacker__factory =
-      await ethers.getContractFactory('ReentrantAttacker');
-    reentrantAttacker = await ReentrantAttacker.connect(attacker).deploy(
+    const SuccessfulAttacker: SuccessfulAttacker__factory =
+      await ethers.getContractFactory('SuccessfulAttacker');
+    successfulAttacker = await SuccessfulAttacker.connect(attacker).deploy(
       unsafeVictim.address
     );
-    await reentrantAttacker.deployed();
+    await successfulAttacker.deployed();
 
     await expect(
-      reentrantAttacker
+      successfulAttacker
         .connect(attacker)
         .attack({ value: ethers.utils.parseEther('1') })
     )
-      .to.emit(reentrantAttacker, 'Successful')
+      .to.emit(successfulAttacker, 'Successful')
       .withArgs(ethers.utils.parseEther('4'));
   });
 
   it('should revert the transaction', async () => {
-    const NonReentrantAttacker: NonReentrantAttacker__factory =
-      await ethers.getContractFactory('NonReentrantAttacker');
-    nonReentrantAttacker = await NonReentrantAttacker.connect(attacker).deploy(
+    const FailedAttacker: FailedAttacker__factory =
+      await ethers.getContractFactory('FailedAttacker');
+    failedAttacker = await FailedAttacker.connect(attacker).deploy(
       safeVictim.address
     );
-    await nonReentrantAttacker.deployed();
+    await failedAttacker.deployed();
 
     await expect(
-      nonReentrantAttacker
+      failedAttacker
         .connect(attacker)
         .attack({ value: ethers.utils.parseEther('1') })
     ).to.be.revertedWith('Transfer failed');

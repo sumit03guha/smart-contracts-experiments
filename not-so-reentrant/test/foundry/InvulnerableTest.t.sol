@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-
-pragma abicoder v2;
+pragma solidity 0.8.19;
 
 import "forge-std/Test.sol";
-import "contracts/Reentrant/UnsafeVictim.sol";
-import "contracts/Reentrant/ReentrantAttacker.sol";
+import "contracts/Invulnerable/SafeVictim.sol";
+import "contracts/Invulnerable/FailedAttacker.sol";
 
-contract ReentrancyTest is Test {
-	UnsafeVictim public victimContract;
-	ReentrantAttacker public attackerContract;
+contract InvulnerableTest is Test {
+	SafeVictim public victimContract;
+	FailedAttacker public attackerContract;
 
 	// Creating signers for the test.
 	address public alice = vm.addr(0x1);
@@ -23,10 +21,10 @@ contract ReentrancyTest is Test {
 	 * @dev The smart contracts are deployed and the initial states are set.
 	 */
 	function setUp() public {
-		victimContract = new UnsafeVictim();
+		victimContract = new SafeVictim();
 
 		vm.prank(attacker);
-		attackerContract = new ReentrantAttacker(address(victimContract));
+		attackerContract = new FailedAttacker(address(victimContract));
 
 		// The signers are allocated with 1 ether each.
 
@@ -53,14 +51,10 @@ contract ReentrancyTest is Test {
 	/**
 	 * @notice Testing the attack.
 	 * @dev The attacker contract is called to attack the victim contract.
-	 * @dev Prior to this attack 3 ethers had been deposited to the victim contract.
-	 * @dev The attacker deposits 1 ether to the victim contract.
-	 * @dev The attacker should be able to withdraw 4 ethers from the victim contract.
-	 * @dev The attack should succeed.
+	 * @dev The attack should fail.
 	 */
-	function testAttack() public {
+	function testFailAttack() public {
 		vm.prank(attacker);
 		attackerContract.attack{ value: 1 ether }();
-		assertEq(attacker.balance, 4 ether);
 	}
 }
