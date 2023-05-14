@@ -1,8 +1,8 @@
-# Gas usage in solidity
+# Not-So-Reentrant
 
 ## Motivation
 
-- This project aims to compare the gas usage of the smart contracts and their functions written in solidity. We try to do a deep dive into the bytecode of the smart contracts and try to understand the gas usage comparison between the different functions.
+- To demonstrate how a function, inside a smart contract using compiler version `<0.8.0`, can be exploited by reentrancy attacks but not so much with compiler version `>=0.8.0`.
 
 ## Prerequisites
 
@@ -15,6 +15,10 @@
 
     ```shell
     npx npm-check-updates -u
+    ```
+
+  - ```shell
+    git submodule update --init --recursive
     ```
 
   - Use [yarn](https://yarnpkg.com/) (preferred version 3+) to install the dependencies.
@@ -31,104 +35,65 @@
   yarn clean-compile
   ```
 
-## Diving into the smart contract and its bytecode
+## Diving into the smart contracts
 
-- The smart contract `Counter`, present inside the [contracts](./contracts) directory, is what we are going to study.
+- Both the smart contracts [SafeVictim.sol](./contracts/Invulnerable/SafeVictim.sol) and [UnsafeVictim.sol](./contracts/Vulnerable/UnsafeVictim.sol) have the same functionality. The only difference is that the former uses compiler version `>=0.8.0` and the latter uses compiler version `<0.8.0`.
 
-  ![Counter](./assets/contract.png)
+- Looking into the common vulnerable `withdraw` function of both the smart contracts.
 
-- The smart contract has been compiled to generate bytecode through intermediate repersentation (IR) in Yul. Read more about the IR in the [official solidity documentation](https://docs.soliditylang.org/en/latest/ir-breaking-changes.html).\
-   To do so, we have set the `viaIR` flag to `true` in the [hardhat.config.js](./hardhat.config.js) file
+  ![withdraw](./assets/withdraw.png)
 
-  ```ts
-  solidity: {
-    compilers: [
-      {
-        version: '0.8.19',
-        settings: {
-          viaIR: true,
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
-    ],
-  },
-  ```
+  The function does not follow the **Check-Effects-Interactions** pattern. The low-level call is made before the state is updated. This makes the function vulnerable to reentrancy attacks.
 
-  and the `via_ir` flag to `true` in the [foundry.toml](./foundry.toml) file.
+- Looking into the attacker smart contracts.
 
-  ```toml
-  via_ir = true
-  ```
+  ![attacker](./assets/attacker.png)
 
-  The [Yul code](./outputs/yul/Counter.yul) has been generated using the following command using solc. The `ir` flag generates the Intermediate Representation (IR) of the smart contract.
+  - The attacker address calls the `attack` function which initially deposits some ether into the victim smart contract.
+  - Then it calls the `withdraw` function, which calls the `withdraw` function of the victim smart contract, and withdraws the ether amount that was deposited.
+  - As soon as the ether is received in the attacker smart contract, the `fallback` function is triggered which again calls the `withdraw` function of the victim smart contract.
+  - This process continues until the victim smart contract runs out of ether.
+  - If the attack is successful, the attacker smart contract will emit the `Successful` event along with the ether balance.
 
-  ```shell
-  solc contracts/Counter.sol -o outputs/yul/ --ir
-  ```
+## Diving into the test cases
 
-- ### Bytecode Observations
+- The test cases have been written in both [TypeScript](./test/reentrancy.test.ts) using [Hardhat](https://hardhat.org/) and [Solidity](./test/foundry/) using [Foundry](https://book.getfoundry.sh/).
 
-  Upon closely looking into the [Yul code](./outputs/yul/Counter.yul) generated we can see the following bytecode comparisons.
+- The signers `alice`, `bob` and `charlie` are depositing `1 ether` each into the victim smart contract and the attacker smart contract is initialized with the address of the victim smart contract.
 
-- ### Comparison between Public and External functions
+  - Hardhat test case smart contract initialization and signers depositing ether into the victim smart contract.
+    ![hardhat-test-beforeEach](./assets/hardhat-test-beforeEach.png)
 
-  - #### Public function (`setPublic`)
+  - Foundry test case smart contract initialization and signers depositing ether into the victim smart contract.
+    ![foundry-test-setUp](./assets/foundry-test-setUp.png)
 
-  ![Public function](./assets/setPublic.png)
+- Positive test case
 
-  - #### External function (`setExternal`)
+  - Hardhat test case
+    ![hardhat-test-positive](./assets/hardhat-test-positive.png)
 
-  ![External function](./assets/setExternal.png)
+  - Foundry test case
+    ![foundry-test-positive](./assets/foundry-test-positive.png)
 
-- **Looking closely into the Yul code, we can see that both the bytecode generated for the public and external functions are the same.**
+- Negative test case
 
-- ### Comparison between pre-increment and post-increment
+  - Hardhat test case
+    ![hardhat-test-negative](./assets/hardhat-test-negative.png)
 
-  - #### Pre-increment (`loop2`)
+  - Foundry test case
+    ![foundry-test-negative](./assets/foundry-test-negative.png)
 
-  ![Pre-increment](./assets/loop2.png)
+## But why?
 
-  - #### Post-increment (`loop1`)
+- The `withdraw` function of both the victim smart contracts is vulnerable to reentrancy attacks because the low-level call is made before the state is updated.
 
-  ![Post-increment](./assets/loop1.png)
+- But only the [UnsafeVictim](./contracts/Vulnerable/UnsafeVictim.sol) smart contract is subject to exploitation.
 
-- **Looking closely into the Yul code, we can see that both the bytecode generated for the pre-increment and post-increment are very much the same.** \
-  In line 30 of the Yul code of both the code snippets, we can see that the the function `increment_t_uint256()` is called.
-  The function `increment_t_uint256(value)` is defined in the Yul code as follows.
+- This is because the `withdraw` function of the [SafeVictim](./contracts/Invulnerable/SafeVictim.sol) smart contract uses compiler version `>=0.8.0` and the `withdraw` function of the [UnsafeVictim](./contracts/Vulnerable/UnsafeVictim.sol) smart contract uses compiler version `<0.8.0`.
 
-  ![Increment](./assets/increment.png)
+- Solidity compiler version `>=0.8.0` has in-built [_arithmetic overflow_ and _underflow_ checks](https://blog.soliditylang.org/2020/12/16/solidity-v0.8.0-release-announcement/). This means that the `withdraw` function of the [SafeVictim](./contracts/Invulnerable/SafeVictim.sol) smart contract will revert if the attacker tries to withdraw more ether than his `balanceOf`.
 
-  Both the incrementers are using `ret := add(value, 1)`, as shown in line 5 of the above code snippet, to increment the value of the variable by 1.
+- If you closely observe the verbose output of the foundry test for the [VulnerableTest.t.sol](./test/foundry/VulnerableTest.t.sol), you will find the following output.
+  ![foundry-test-negative-verbose](./assets/foundry-test-negative-verbose.png)
 
-- ### Gas usage Observations
-
-  Now let's look at the gas usage of the smart contract functions.
-
-  - #### Hardhat gas report
-
-    ![Gas report hardhat](./assets/gas-report-hardhat.png)
-
-  - #### Foundry gas report
-
-    ![Gas report foundry](./assets/gas-report-foundry.png)
-
-- ### Gas usage comparisons
-
-  - > `setPublic` < `setExternal`
-
-    - The gas usage of the public function is less than the external function as seen in both the gas reports from hardhat and foundry.
-
-  - > `loop2` < `loop1`
-
-    - The gas usage of the pre-increment is less than the post-increment as seen in both the gas reports from hardhat and foundry.
-
-## Conclusion
-
-- Even though the bytecode (Yul code) of the public and external functions are the same, the gas usage of the public function is less than the external function. Conventionally, what we have known is that the external function consumes less gas as compared to the public function, since only the external function could take `calldata` arguments and the public functions were forced to take the more expensive `memory` arguments. But, in this case, we can see that the gas usage of the public function is less than the external function.
-
-- Even though the bytecode (Yul code) of the pre-increment and post-increment are the same, the gas usage of the pre-increment is less than the post-increment.
-
-- The above conclusions are neither perfect nor do they fully explain the reason behind the observations. But, they do raise some questions as to why the gas usage of the public function is less than the external function and the gas usage of the pre-increment is less than the post-increment, even though the bytecode (Yul code) of both the functions are the same.
+- Upon successive reentrancies, the `balanceOf` of the attacker smart contract becomes negative. This causes the `withdraw` function of the [UnsafeVictim](./contracts/Vulnerable/UnsafeVictim.sol) to cause arithmetic underflow and thereby to revert.
